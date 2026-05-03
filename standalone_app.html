@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NR Generator">
+    <title>Nominal Roll Generator - Standalone</title>
+    
+    <!-- SheetJS library for Excel generation -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            margin: 0;
+        }
+        
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .offline-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .form-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .form-group input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        #nameSearch {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+
+        #nameSearch:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #667eea;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .search-result-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+
+        .search-result-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .result-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .result-details {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .selected-names {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            min-height: 50px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #ddd;
+        }
+
+        .name-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .name-tag .remove-btn {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            transition: background-color 0.2s;
+        }
+
+        .name-tag .remove-btn:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        .btn {
+            padding: 15px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            touch-action: manipulation;
+        }
+        
+        @media (min-width: 768px) {
+            .btn {
+                padding: 15px 30px;
+                font-size: 1.1em;
+            }
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .count-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Nominal Roll Generator</h1>
+            <p>Standalone - Works Offline</p>
+            <span class="offline-badge">✓ No Internet Required</span>
+        </div>
+
+        <div class="content">
+            <div id="statusMessage" class="status-message"></div>
+
+            <!-- Metadata Section -->
+            <div class="section">
+                <h2 class="section-title">Nominal Roll Details</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="satsangPlace">Satsang Place</label>
+                        <input type="text" id="satsangPlace" placeholder="Enter satsang place">
+                    </div>
+                    <div class="form-group">
+                        <label for="area">Area</label>
+                        <input type="text" id="area" placeholder="Enter area">
+                    </div>
+                    <div class="form-group">
+                        <label for="zone">Zone</label>
+                        <input type="text" id="zone" placeholder="Enter zone">
+                    </div>
+                    <div class="form-group">
+                        <label for="jathedar">Jathedar Name</label>
+                        <input type="text" id="jathedar" placeholder="Enter jathedar name">
+                    </div>
+                    <div class="form-group">
+                        <label for="driver">Driver Name</label>
+                        <input type="text" id="driver" placeholder="Enter driver name">
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicleType">Vehicle Type</label>
+                        <input type="text" id="vehicleType" placeholder="Enter vehicle type">
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicleNo">Vehicle Number</label>
+                        <input type="text" id="vehicleNo" placeholder="Enter vehicle number">
+                    </div>
+                    <div class="form-group">
+                        <label for="placeOfSewa">Place of Sewa</label>
+                        <input type="text" id="placeOfSewa" placeholder="Enter place of sewa">
+                    </div>
+                    <div class="form-group">
+                        <label for="fromDate">From Date</label>
+                        <input type="date" id="fromDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="toDate">To Date</label>
+                        <input type="date" id="toDate">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Name Selection Section -->
+            <div class="section">
+                <h2 class="section-title">
+                    Select Sewadars
+                    <span class="count-badge" id="nameCount">0 selected</span>
+                </h2>
+                
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="nameSearch" 
+                        placeholder="🔍 Type to search for names..."
+                        autocomplete="off"
+                    >
+                    <div class="search-results" id="searchResults"></div>
+                </div>
+
+                <div class="selected-names" id="selectedNames">
+                    <div class="empty-state">No sewadars selected yet. Search and click to add.</div>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <div class="section">
+                <button class="btn btn-primary" id="generateBtn" disabled>
+                    Generate Nominal Roll
+                </button>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Generating your nominal roll...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Master data will be loaded from external JSON file
+        let masterData = [];
+        let selectedNames = new Set();
+        let searchTimeout;
+
+        const nameSearch = document.getElementById('nameSearch');
+        const searchResults = document.getElementById('searchResults');
+        const selectedNamesDiv = document.getElementById('selectedNames');
+        const generateBtn = document.getElementById('generateBtn');
+        const nameCount = document.getElementById('nameCount');
+        const loading = document.getElementById('loading');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // Load master data
+        async function loadMasterData() {
+            try {
+                const response = await fetch('static/master_data.json');
+                masterData = await response.json();
+                console.log(`Loaded ${masterData.length} records`);
+                showStatus(`✓ Loaded ${masterData.length} records from master data`, 'success');
+            } catch (error) {
+                console.error('Error loading master data:', error);
+                showStatus('Error loading master data. Please refresh the page.', 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type}`;
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Search functionality
+        nameSearch.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim().toLowerCase();
+
+            if (query.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                const results = masterData.filter(person => 
+                    person.name.toLowerCase().includes(query)
+                ).slice(0, 50); // Limit to 50 results
+                
+                displaySearchResults(results);
+            }, 300);
+        });
+
+        function displaySearchResults(results) {
+            if (results.length === 0) {
+                searchResults.innerHTML = '<div class="search-result-item">No results found</div>';
+                searchResults.style.display = 'block';
+                return;
+            }
+
+            searchResults.innerHTML = results.map(person => `
+                <div class="search-result-item" onclick="addName('${person.name.replace(/'/g, "\\'")}')">
+                    <div class="result-name">${person.name}</div>
+                    <div class="result-details">
+                        ${person.father_name} | ${person.gender}, ${person.age} | ${person.contact}
+                    </div>
+                </div>
+            `).join('');
+            searchResults.style.display = 'block';
+        }
+
+        function addName(name) {
+            if (!selectedNames.has(name)) {
+                selectedNames.add(name);
+                updateSelectedNames();
+                nameSearch.value = '';
+                searchResults.style.display = 'none';
+            }
+        }
+
+        function removeName(name) {
+            selectedNames.delete(name);
+            updateSelectedNames();
+        }
+
+        function updateSelectedNames() {
+            if (selectedNames.size === 0) {
+                selectedNamesDiv.innerHTML = '<div class="empty-state">No sewadars selected yet. Search and click to add.</div>';
+                generateBtn.disabled = true;
+            } else {
+                selectedNamesDiv.innerHTML = Array.from(selectedNames).map(name => `
+                    <div class="name-tag">
+                        <span>${name}</span>
+                        <button class="remove-btn" onclick="removeName('${name.replace(/'/g, "\\'")}')">×</button>
+                    </div>
+                `).join('');
+                generateBtn.disabled = false;
+            }
+            nameCount.textContent = `${selectedNames.size} selected`;
+        }
+
+        function maskAadhar(aadhar) {
+            const aadharStr = String(aadhar);
+            if (aadharStr.length >= 4) {
+                return '*'.repeat(aadharStr.length - 4) + aadharStr.slice(-4);
+            }
+            return aadharStr;
+        }
+
+        // Generate nominal roll
+        generateBtn.addEventListener('click', function() {
+            const metadata = {
+                satsang_place: document.getElementById('satsangPlace').value,
+                area: document.getElementById('area').value,
+                zone: document.getElementById('zone').value,
+                jathedar: document.getElementById('jathedar').value,
+                driver: document.getElementById('driver').value,
+                vehicle_type: document.getElementById('vehicleType').value,
+                vehicle_no: document.getElementById('vehicleNo').value,
+                place_of_sewa: document.getElementById('placeOfSewa').value,
+                from_date: document.getElementById('fromDate').value,
+                to_date: document.getElementById('toDate').value
+            };
+
+            loading.classList.add('active');
+            generateBtn.disabled = true;
+
+            // Generate Excel file
+            setTimeout(() => {
+                try {
+                    generateExcel(Array.from(selectedNames), metadata);
+                    loading.classList.remove('active');
+                    generateBtn.disabled = false;
+                    showStatus('✓ Nominal Roll generated successfully!', 'success');
+                } catch (error) {
+                    console.error('Error:', error);
+                    loading.classList.remove('active');
+                    generateBtn.disabled = false;
+                    showStatus('Error generating nominal roll. Please try again.', 'error');
+                }
+            }, 500);
+        });
+
+        function generateExcel(selectedNamesList, metadata) {
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            
+            // Create worksheet data
+            const wsData = [];
+            
+            // Header rows
+            wsData.push(['SATSANG CENTRES IN INDIA', '', '', '', '', '', '', '', 'SCI/2020/84']);
+            wsData.push(['NOMINAL ROLL SEWA JATHA']);
+            wsData.push(['GZB/UP/175/010/']);
+            wsData.push([]);
+            wsData.push(['Name of Satsang Place:', '', metadata.satsang_place, '', '', 'Area :', metadata.area, 'ZONE :', metadata.zone]);
+            wsData.push(['Name of Jathedar:', '', metadata.jathedar, '', '', 'Name of Driver:']);
+            wsData.push(['Type of Vehicle:', '', metadata.vehicle_type, '', '', 'Vehicle No. :']);
+            wsData.push(['Place of Sewa:', '', metadata.place_of_sewa, '', '', 'FROM  :', metadata.from_date, 'TO  :', metadata.to_date]);
+            wsData.push(['(Mention Beas Department or Centre As applicable)']);
+            wsData.push([]);
+            wsData.push(['SR. No.', 'Name of Sewadar / Sewadarni', "Father's / Husband's Name", 'F', 'Age', 'Aadhar No.', 'R/o Village / Town / Locality / District', 'Mobile No.', 'BADGE ID']);
+            
+            // Data rows
+            selectedNamesList.forEach((name, index) => {
+                const person = masterData.find(p => p.name === name);
+                if (person) {
+                    wsData.push([
+                        index + 1,
+                        person.name,
+                        person.father_name,
+                        person.gender,
+                        person.age,
+                        maskAadhar(person.aadhar),
+                        person.address,
+                        person.contact,
+                        person.badge
+                    ]);
+                }
+            });
+            
+            // Create worksheet
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            
+            // Set column widths
+            ws['!cols'] = [
+                {wch: 8},  // SR. No.
+                {wch: 25}, // Name
+                {wch: 25}, // Father's name
+                {wch: 3},  // Gender
+                {wch: 5},  // Age
+                {wch: 15}, // Aadhar
+                {wch: 35}, // Address
+                {wch: 15}, // Mobile
+                {wch: 15}  // Badge
+            ];
+            
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Nominal Roll');
+            
+            // Generate filename
+            const timestamp = new Date().toISOString().slice(0, 10);
+            const filename = `Nominal_Roll_${timestamp}.xlsx`;
+            
+            // Save file
+            XLSX.writeFile(wb, filename);
+        }
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.search-container')) {
+                searchResults.style.display = 'none';
+            }
+        });
+
+        // Load master data on page load
+        loadMasterData();
+    </script>
+</body>
+</html>
