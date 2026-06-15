@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NR Generator">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <title>Nominal Roll Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            margin: 0;
+        }
+        
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .form-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .form-group input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        #nameSearch {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+
+        #nameSearch:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #667eea;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .search-result-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+
+        .search-result-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .result-details {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .selected-names {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            min-height: 50px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #ddd;
+        }
+
+        .name-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .name-tag .remove-btn {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            transition: background-color 0.2s;
+        }
+
+        .name-tag .remove-btn:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        .btn {
+            padding: 15px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            touch-action: manipulation;
+        }
+        
+        @media (min-width: 768px) {
+            .btn {
+                padding: 15px 30px;
+                font-size: 1.1em;
+            }
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Install prompt styles */
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            display: none;
+            align-items: center;
+            gap: 15px;
+            z-index: 2000;
+            max-width: 90%;
+        }
+        
+        .install-prompt.show {
+            display: flex;
+        }
+        
+        .install-prompt button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .install-prompt .close-btn {
+            background: #ddd;
+            color: #333;
+            padding: 5px 10px;
+            font-size: 0.9em;
+        }
+
+        .count-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Nominal Roll Generator</h1>
+            <p>Create nominal rolls from master data with ease</p>
+            <div style="margin-top: 15px;">
+                <a href="/reports" style="color: white; text-decoration: none; padding: 8px 20px; background: rgba(255,255,255,0.2); border-radius: 20px; display: inline-block;">
+                    📊 View Reports & Analytics
+                </a>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Metadata Section -->
+            <div class="section">
+                <h2 class="section-title">Nominal Roll Details</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="referenceNo">Reference Number</label>
+                        <input type="text" id="referenceNo" placeholder="e.g., GZB/UP/175/010/">
+                    </div>
+                    <div class="form-group">
+                        <label for="jathedar">Jathedar Name</label>
+                        <div class="search-container" style="margin-bottom: 0;">
+                            <input type="text" id="jathedar" placeholder="Type to search jathedar name" autocomplete="off">
+                            <div class="search-results" id="jathedarResults"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="driver">Driver Name</label>
+                        <input type="text" id="driver" placeholder="Enter driver name">
+                    </div>
+                    <div class="form-group">
+                        <label for="departmentCentre">Beas Department / Centre</label>
+                        <input type="text" id="departmentCentre" placeholder="Enter department or centre">
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicleNo">Vehicle Number</label>
+                        <input type="text" id="vehicleNo" placeholder="Enter vehicle number">
+                    </div>
+                    <div class="form-group">
+                        <label for="placeOfSewa">Place of Sewa</label>
+                        <input type="text" id="placeOfSewa" placeholder="Enter place of sewa">
+                    </div>
+                    <div class="form-group">
+                        <label for="fromDate">From Date</label>
+                        <input type="date" id="fromDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="toDate">To Date</label>
+                        <input type="date" id="toDate">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Name Selection Section -->
+            <div class="section">
+                <h2 class="section-title">
+                    Select Sewadars
+                    <span class="count-badge" id="nameCount">0 selected</span>
+                </h2>
+                
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="nameSearch" 
+                        placeholder="🔍 Type to search for names..."
+                        autocomplete="off"
+                    >
+                    <div class="search-results" id="searchResults"></div>
+                </div>
+
+                <div class="selected-names" id="selectedNames">
+                    <div class="empty-state">No sewadars selected yet. Search and click to add.</div>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <div class="section">
+                <button class="btn btn-primary" id="generateBtn" disabled>
+                    Generate Nominal Roll
+                </button>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Generating your nominal roll...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedNames = [];
+        let selectedNameSet = new Set();
+        let selectedJathedar = '';
+        let nameSearchTimeout;
+        let jathedarSearchTimeout;
+
+        const nameSearch = document.getElementById('nameSearch');
+        const searchResults = document.getElementById('searchResults');
+        const jathedarInput = document.getElementById('jathedar');
+        const jathedarResults = document.getElementById('jathedarResults');
+        const selectedNamesDiv = document.getElementById('selectedNames');
+        const generateBtn = document.getElementById('generateBtn');
+        const nameCount = document.getElementById('nameCount');
+        const loading = document.getElementById('loading');
+
+        function fetchNameResults(query, callback) {
+            fetch('/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query: query })
+            })
+            .then(response => response.json())
+            .then(data => callback(data))
+            .catch(error => {
+                console.error('Error:', error);
+                callback([]);
+            });
+        }
+
+        nameSearch.addEventListener('input', function() {
+            clearTimeout(nameSearchTimeout);
+            const query = this.value.trim();
+
+            if (query.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+
+            nameSearchTimeout = setTimeout(() => {
+                fetchNameResults(query, displaySewadarResults);
+            }, 300);
+        });
+
+        jathedarInput.addEventListener('input', function() {
+            clearTimeout(jathedarSearchTimeout);
+            const query = this.value.trim();
+            selectedJathedar = query;
+
+            if (query.length < 2) {
+                jathedarResults.style.display = 'none';
+                updateSelectedNames();
+                return;
+            }
+
+            jathedarSearchTimeout = setTimeout(() => {
+                fetchNameResults(query, displayJathedarResults);
+            }, 300);
+        });
+
+        function displaySewadarResults(results) {
+            if (results.length === 0) {
+                searchResults.innerHTML = '<div class="search-result-item">No results found</div>';
+                searchResults.style.display = 'block';
+                return;
+            }
+
+            searchResults.innerHTML = results.map(person => `
+                <div class="search-result-item" onclick='addName(${JSON.stringify(person.name)})'>
+                    <div class="result-name">${person.name}</div>
+                    <div class="result-details">
+                        ${person.father_name} | ${person.gender}, ${person.age} | ${person.contact}
+                    </div>
+                </div>
+            `).join('');
+            searchResults.style.display = 'block';
+        }
+
+        function displayJathedarResults(results) {
+            if (results.length === 0) {
+                jathedarResults.innerHTML = '<div class="search-result-item">No results found</div>';
+                jathedarResults.style.display = 'block';
+                return;
+            }
+
+            jathedarResults.innerHTML = results.map(person => `
+                <div class="search-result-item" onclick='selectJathedar(${JSON.stringify(person.name)})'>
+                    <div class="result-name">${person.name}</div>
+                    <div class="result-details">
+                        ${person.father_name} | ${person.gender}, ${person.age} | ${person.contact}
+                    </div>
+                </div>
+            `).join('');
+            jathedarResults.style.display = 'block';
+        }
+
+        function selectJathedar(name) {
+            selectedJathedar = name;
+            jathedarInput.value = name;
+            jathedarResults.style.display = 'none';
+            addName(name, true);
+        }
+
+        function addName(name, prioritize = false) {
+            if (!selectedNameSet.has(name)) {
+                selectedNameSet.add(name);
+                if (prioritize) {
+                    selectedNames.unshift(name);
+                } else {
+                    selectedNames.push(name);
+                }
+            } else if (prioritize) {
+                selectedNames = [name, ...selectedNames.filter(existingName => existingName !== name)];
+            }
+
+            updateSelectedNames();
+            if (!prioritize) {
+                nameSearch.value = '';
+                searchResults.style.display = 'none';
+            }
+        }
+
+        function removeName(name) {
+            if (name === selectedJathedar) {
+                alert('Selected Jathedar must remain included in the sewadar list.');
+                return;
+            }
+
+            selectedNameSet.delete(name);
+            selectedNames = selectedNames.filter(existingName => existingName !== name);
+            updateSelectedNames();
+        }
+
+        function updateSelectedNames() {
+            let orderedNames = [...selectedNames];
+
+            if (selectedJathedar && selectedNameSet.has(selectedJathedar)) {
+                orderedNames = [selectedJathedar, ...orderedNames.filter(name => name !== selectedJathedar)];
+                selectedNames = orderedNames;
+            }
+
+            if (orderedNames.length === 0) {
+                selectedNamesDiv.innerHTML = '<div class="empty-state">No sewadars selected yet. Search and click to add.</div>';
+                generateBtn.disabled = true;
+            } else {
+                selectedNamesDiv.innerHTML = orderedNames.map(name => `
+                    <div class="name-tag">
+                        <span>${name}${name === selectedJathedar ? ' (Jathedar)' : ''}</span>
+                        <button class="remove-btn" onclick='removeName(${JSON.stringify(name)})'>×</button>
+                    </div>
+                `).join('');
+                generateBtn.disabled = false;
+            }
+
+            nameCount.textContent = `${orderedNames.length} selected`;
+        }
+
+        generateBtn.addEventListener('click', function() {
+            const metadata = {
+                reference_no: document.getElementById('referenceNo').value,
+                satsang_place: 'Indirapuram',
+                area: 'Ghaziabad',
+                zone: 'III',
+                jathedar: jathedarInput.value,
+                driver: document.getElementById('driver').value,
+                vehicle_type: document.getElementById('departmentCentre').value,
+                vehicle_no: document.getElementById('vehicleNo').value,
+                place_of_sewa: document.getElementById('placeOfSewa').value,
+                from_date: document.getElementById('fromDate').value,
+                to_date: document.getElementById('toDate').value
+            };
+
+            loading.classList.add('active');
+            generateBtn.disabled = true;
+
+            fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    names: selectedNames,
+                    metadata: metadata
+                })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Nominal_Roll_${new Date().toISOString().slice(0,10)}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                loading.classList.remove('active');
+                generateBtn.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                loading.classList.remove('active');
+                generateBtn.disabled = false;
+                alert('Error generating nominal roll. Please try again.');
+            });
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.search-container')) {
+                searchResults.style.display = 'none';
+                jathedarResults.style.display = 'none';
+            }
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed:', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
